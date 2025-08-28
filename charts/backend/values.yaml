@@ -31,4 +31,6 @@ keda:
       sum(rate(istio_requests_total{reporter="destination",destination_workload="{{ include "backend.fullname" . }}"}[1m]))
 
 istio:
-  host: "example.local"
+  enabled: true
+  host: "demo-ravid-cloud.duckdns.org"
+  

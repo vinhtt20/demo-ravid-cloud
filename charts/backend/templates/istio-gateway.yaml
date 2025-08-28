@@ -1,25 +1,29 @@
+{{- if .Values.istio.enabled }}
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata:
   name: {{ include "backend.fullname" . }}-gateway
+  namespace: {{ .Release.Namespace }}
 spec:
   selector:
-    istio: ingressgateway
+    app: istio-ingress
+    istio: ingress
   servers:
     - port:
         number: 80
         name: http
         protocol: HTTP
       hosts:
-        - {{ .Values.istio.host | quote }}
+        - {{ .Values.istio.host | default "*" | quote }}
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: {{ include "backend.fullname" . }}-vs
+  namespace: {{ .Release.Namespace }}
 spec:
   hosts:
-    - {{ .Values.istio.host | quote }}
+    - {{ .Values.istio.host | default "*" | quote }}
   gateways:
     - {{ include "backend.fullname" . }}-gateway
   http:
@@ -27,4 +31,5 @@ spec:
         - destination:
             host: {{ include "backend.fullname" . }}
             port:
-              number: {{ .Values.service.port }}
+              number: 80
+{{- end }}

@@ -7,9 +7,9 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    app.kubernetes.io/name: {{ include "backend.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "backend.selectorLabels" . | nindent 4 }}
   ports:
     - name: http
-      port: {{ .Values.service.port }}
+      port: 80
       targetPort: http
+      protocol: TCP

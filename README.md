@@ -40,10 +40,19 @@ docker push $IMAGE
 helm repo add istio https://istio-release.storage.googleapis.com/charts
 helm repo update
 
+# CRDs
 helm upgrade --install istio-base istio/base -n istio-system --create-namespace
+
+# Control plane (istiod)
 helm upgrade --install istiod istio/istiod -n istio-system
 
-helm upgrade --install istio-ingress istio/gateway -n istio-system
+# Ingress Gateway (LoadBalancer đúng port)
+helm upgrade --install istio-ingress istio/gateway -n istio-system \
+  --set service.type=LoadBalancer \
+  --set service.ports[0].name=status-port --set service.ports[0].port=15021 --set service.ports[0].targetPort=15021 \
+  --set service.ports[1].name=http2       --set service.ports[1].port=80    --set service.ports[1].targetPort=8080  \
+  --set service.ports[2].name=https       --set service.ports[2].port=443   --set service.ports[2].targetPort=8443
+
 
 # Verify CRDs:
 kubectl get crd | grep -E 'istio.io|gateway.networking'
