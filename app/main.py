@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 
 app = Flask(__name__)
+# 4. Trigger workflow
 
 @app.get("/healthz")
 def healthz():
