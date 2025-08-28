@@ -1,0 +1,5 @@
+apiVersion: v2
+name: backend
+version: 0.1.0
+description: Minimal backend chart with probes, optional HPA & KEDA, and dummy Istio GW/VS
+appVersion: "0.1.0"
