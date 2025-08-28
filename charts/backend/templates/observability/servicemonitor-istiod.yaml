@@ -1,0 +1,24 @@
+{{- if and .Values.monitoring.enabled .Values.monitoring.istiod.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "backend.fullname" . }}-istiod
+  namespace: {{ .Values.monitoring.namespace | default "monitoring" }}
+  labels:
+    {{- with .Values.monitoring.prometheus }}
+    {{ .releaseLabelKey | default "release" }}: {{ .releaseName | default "kube-prometheus-stack" | quote }}
+    {{- end }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Values.monitoring.istiod.namespace | default "istio-system" | quote }}
+  selector:
+    matchLabels:
+      {{- range $k, $v := .Values.monitoring.istiod.service.selectorLabels }}
+      {{ $k }}: {{ $v | quote }}
+      {{- end }}
+  endpoints:
+    - port: {{ .Values.monitoring.istiod.service.portName | default "http-monitoring" | quote }}
+      path: {{ .Values.monitoring.istiod.service.path | default "/metrics" | quote }}
+      interval: {{ .Values.monitoring.istiod.service.interval | default "30s" | quote }}
+{{- end }}

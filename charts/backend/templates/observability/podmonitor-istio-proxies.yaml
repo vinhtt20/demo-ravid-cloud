@@ -1,0 +1,33 @@
+{{- if and .Values.monitoring.enabled .Values.monitoring.sidecars.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "backend.fullname" . }}-istio-proxies
+  namespace: {{ .Values.monitoring.namespace | default "monitoring" }}
+  labels:
+    {{- with .Values.monitoring.prometheus }}
+    {{ .releaseLabelKey | default "release" }}: {{ .releaseName | default "kube-prometheus-stack" | quote }}
+    {{- end }}
+spec:
+  {{- if .Values.monitoring.sidecars.anyNamespace }}
+  namespaceSelector:
+    any: true
+  {{- else }}
+  namespaceSelector:
+    matchNames:
+    {{- range .Values.monitoring.sidecars.namespaces }}
+      - {{ . | quote }}
+    {{- end }}
+  {{- end }}
+  selector: {}   # quét mọi pod, lọc tiếp bằng relabelings
+  podMetricsEndpoints:
+    - port: {{ .Values.monitoring.sidecars.portName | default "http-envoy-prom" | quote }}
+      path: {{ .Values.monitoring.sidecars.path | default "/stats/prometheus" | quote }}
+      interval: {{ .Values.monitoring.sidecars.interval | default "30s" | quote }}
+      {{- if .Values.monitoring.sidecars.requireIstioSidecar }}
+      relabelings:
+        - action: keep
+          sourceLabels: ["__meta_kubernetes_pod_annotation_sidecar_istio_io_status"]
+          regex: ".+"
+      {{- end }}
+{{- end }}

@@ -1,0 +1,24 @@
+{{- if and .Values.monitoring.enabled .Values.monitoring.ingressGateway.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "backend.fullname" . }}-ingress-gw
+  namespace: {{ .Values.monitoring.namespace | default "monitoring" }}
+  labels:
+    {{- with .Values.monitoring.prometheus }}
+    {{ .releaseLabelKey | default "release" }}: {{ .releaseName | default "kube-prometheus-stack" | quote }}
+    {{- end }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Values.monitoring.ingressGateway.namespace | default "istio-system" | quote }}
+  selector:
+    matchLabels:
+      {{- range $k, $v := .Values.monitoring.ingressGateway.service.selectorLabels }}
+      {{ $k }}: {{ $v | quote }}
+      {{- end }}
+  endpoints:
+    - port: {{ .Values.monitoring.ingressGateway.service.portName | default "http-envoy-prom" | quote }}
+      path: {{ .Values.monitoring.ingressGateway.service.path | default "/stats/prometheus" | quote }}
+      interval: {{ .Values.monitoring.ingressGateway.service.interval | default "30s" | quote }}
+{{- end }}

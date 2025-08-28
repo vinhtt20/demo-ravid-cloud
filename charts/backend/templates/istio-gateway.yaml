@@ -6,15 +6,16 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   selector:
-    app: istio-ingress
-    istio: ingress
+    {{- range $k, $v := .Values.istio.gatewaySelector }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
   servers:
     - port:
         number: 80
         name: http
         protocol: HTTP
       hosts:
-        - {{ .Values.istio.host | default "*" | quote }}
+        - {{ required "Set .Values.istio.host (e.g. demo-ravid-cloud.duckdns.org)" .Values.istio.host | quote }}
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -23,13 +24,16 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   hosts:
-    - {{ .Values.istio.host | default "*" | quote }}
+    - {{ required "Set .Values.istio.host" .Values.istio.host | quote }}
   gateways:
     - {{ include "backend.fullname" . }}-gateway
   http:
-    - route:
+    - match:
+        - uri:
+            prefix: /
+      route:
         - destination:
-            host: {{ include "backend.fullname" . }}
+            host: {{ include "backend.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
             port:
               number: 80
 {{- end }}
