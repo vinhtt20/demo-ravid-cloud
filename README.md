@@ -77,6 +77,7 @@ curl -sS http://127.0.0.1:8080/healthz
 ---
 
 ## 4) How the GitHub Action is Triggered
+(trigger)
 Workflow: `.github/workflows/ci-cd.yml`  
 **Triggers**:
 - `push` to `main` touching `app/**`, `charts/**`, or the workflow itself
