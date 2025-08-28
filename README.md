@@ -146,6 +146,8 @@ helm repo add kedacore https://kedacore.github.io/charts
 helm repo update
 helm upgrade --install keda kedacore/keda -n keda --create-namespace
 
+# Load test
+hey -z 120s -q 50 -c 20 http://demo-ravid-cloud.duckdns.org/ 
 ```
 
 
