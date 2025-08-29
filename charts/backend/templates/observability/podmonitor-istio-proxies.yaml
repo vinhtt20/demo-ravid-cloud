@@ -19,7 +19,7 @@ spec:
       - {{ . | quote }}
     {{- end }}
   {{- end }}
-  selector: {}
+  selector: {}   # quét mọi pod, lọc tiếp bằng relabelings
   podMetricsEndpoints:
     - port: {{ .Values.monitoring.sidecars.portName | default "http-envoy-prom" | quote }}
       path: {{ .Values.monitoring.sidecars.path | default "/stats/prometheus" | quote }}
