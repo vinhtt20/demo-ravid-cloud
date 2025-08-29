@@ -22,10 +22,10 @@ variable "cluster_name" {
 
 variable "node_count" {
     type    = number
-    default = 1
+    default = 2
 }
 
 variable "machine_type" {
     type    = string
-    default = "e2-standard-2"
+    default = "e2-standard-8"
 }
