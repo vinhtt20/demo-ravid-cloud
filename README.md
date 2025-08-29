@@ -113,43 +113,65 @@ curl -sS http://127.0.0.1:8080/healthz
 
 ---
 
-## 5. Scaling & Thresholds
+## 5.  How Scaling Works & Where to Configure Thresholds
 
-This repo supports **either** CPU HPA **or** KEDA (RPS via Prometheus/Istio metrics).
+This backend can be autoscaled in **two modes**:
 
-### A. CPU-based HPA (default)
-
-Enable and tune in `charts/backend/values.yaml`:
+## 1. CPU-based HPA (default)
+- Kubernetes **HorizontalPodAutoscaler (HPA)** is enabled by default.  
+- It scales the Deployment up or down based on **CPU utilization percentage**.  
+- Configurable in [`charts/backend/values.yaml`](charts/backend/values.yaml):
 
 ```yaml
 autoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 5
-  targetCPUUtilizationPercentage: 60
+  targetCPUUtilizationPercentage: 60   # threshold (%)
 ```
 
-Rendered manifest: `charts/backend/templates/hpa.yaml` (API `autoscaling/v2`).
+- Rendered into [`charts/backend/templates/hpa.yaml`](charts/backend/templates/hpa.yaml) using the `autoscaling/v2` API.  
+- When average CPU > 60%, pods scale up (up to 5).  
+- When CPU drops below the target, pods gradually scale down (minimum 1).
 
-### B. Requests/sec with KEDA (optional)
+## 2. Request-per-second with KEDA (optional)
+- If KEDA and Prometheus are installed, scaling can be driven by **incoming request rate**.  
+- The metric used is `istio_requests_total` (exported by Istio proxy sidecars).  
+- Configuration lives in [`charts/backend/templates/keda-scaledobject.yaml`](charts/backend/templates/keda-scaledobject.yaml).  
 
+```yaml
+triggers:
+  - type: prometheus
+    metadata:
+      serverAddress: http://monitoring-kube-prometheus-prometheus.monitoring.svc:9090
+      query: |
+        sum(rate(istio_requests_total{
+          reporter="destination",
+          destination_service=~"backend\.default\.svc\.cluster\.local"
+        }[1m]))
+      threshold: "5"     # scale up when > 5 RPS
+```
+
+- Adjust `threshold` to control **RPS per pod** before scaling occurs.  
+- Other knobs:
+  - `minReplicaCount` / `maxReplicaCount` — floor & ceiling of scaling.  
+  - `pollingInterval` — how often KEDA queries Prometheus (default 30s).  
+  - `cooldownPeriod` — how long to wait before scaling down (default 300s).  
+
+### Load Testing
+To validate scaling behavior, you can:
+- Use [`hey`](https://github.com/rakyll/hey) for simple HTTP load tests (e.g. generate RPS to trigger HPA/KEDA).
 ```bash
-# Install prometheus
-# helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-# helm repo update
-
-# helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
-#   -n monitoring --create-namespace
-
-# Install Keda
-helm repo add kedacore https://kedacore.github.io/charts
-helm repo update
-helm upgrade --install keda kedacore/keda -n keda --create-namespace
-
 # Load test
 hey -z 120s -q 50 -c 20 http://demo-ravid-cloud.duckdns.org/ 
 ```
+- Optionally, use [Gremlin](https://www.gremlin.com/) to run more advanced stress/chaos scenarios (CPU, memory, network) that also trigger scaling events.
 
+
+## 3. Switching between modes
+- **CPU HPA** is enabled when `autoscaling.enabled=true`.  
+- **KEDA** is active if the `ScaledObject` is deployed (requires Prometheus + KEDA installed).  
+- Only enable **one** mode at a time for the same Deployment to avoid conflicts.
 
 ---
 
