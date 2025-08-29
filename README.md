@@ -96,7 +96,7 @@ kubectl get crd | grep -E 'istio.io|gateway.networking'
 
 > Istio manifests in this repo are **stubs** for routing. Set `charts/backend/values.yaml -> istio.host` and ensure the Istio ingressgateway above is running if you plan to expose externally.
 
-### 3.2 (Optional) Install KEDA and Prometheus stack
+### 3.2 Install KEDA and Prometheus stack
 
 ```bash
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -150,7 +150,7 @@ curl -sS http://127.0.0.1:8080/healthz
 
 This backend can be autoscaled in **two modes**:
 
-## 1. CPU-based HPA (default)
+## A. CPU-based HPA (default)
 - Kubernetes **HorizontalPodAutoscaler (HPA)** is enabled by default.  
 - It scales the Deployment up or down based on **CPU utilization percentage**.  
 - Configurable in [`charts/backend/values.yaml`](charts/backend/values.yaml):
@@ -167,7 +167,7 @@ autoscaling:
 - When average CPU > 60%, pods scale up (up to 5).  
 - When CPU drops below the target, pods gradually scale down (minimum 1).
 
-## 2. Request-per-second with KEDA (optional)
+## B. Request-per-second with KEDA
 - If KEDA and Prometheus are installed, scaling can be driven by **incoming request rate**.  
 - The metric used is `istio_requests_total` (exported by Istio proxy sidecars).  
 - Configuration lives in [`charts/backend/templates/keda-scaledobject.yaml`](charts/backend/templates/keda-scaledobject.yaml).  
@@ -201,7 +201,7 @@ hey -z 120s -q 50 -c 20 http://demo-ravid-cloud.duckdns.org/
 - Optionally, use [Gremlin](https://www.gremlin.com/) to run more advanced stress/chaos scenarios (CPU, memory, network) that also trigger scaling events.
 
 
-## 3. Switching between modes
+## C. Switching between modes
 - **CPU HPA** is enabled when `autoscaling.enabled=true`.  
 - **KEDA** is active if the `ScaledObject` is deployed (requires Prometheus + KEDA installed).  
 - Only enable **one** mode at a time for the same Deployment to avoid conflicts.

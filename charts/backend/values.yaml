@@ -3,6 +3,22 @@ image:
   tag: "dev"
   pullPolicy: IfNotPresent
 
+container:
+  ports:
+    - name: http
+      containerPort: 8080
+      protocol: TCP
+
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: http
+
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: http
+
 service:
   port: 80
   targetPort: 8080
