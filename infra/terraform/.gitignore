@@ -1,0 +1,58 @@
+# =========================
+# Terraform
+# =========================
+# Local state
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Terraform plan files
+*.tfplan
+*.tfvars.json
+
+# Override files (local only)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# .terraform dir
+.terraform/
+.terraform.lock.hcl
+
+# Sensitive files
+*.tfvars
+secrets.auto.tfvars
+
+# =========================
+# Helm
+# =========================
+# Chart packages
+*.tgz
+
+# Helm release info / debug output
+*.release.yaml
+*.rendered.yaml
+
+# Chart lock (generated)
+Chart.lock
+
+# Local test values
+values.local.yaml
+values.dev.yaml
+
+# =========================
+# General
+# =========================
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python cache (nếu có script hỗ trợ)
+__pycache__/
+*.pyc

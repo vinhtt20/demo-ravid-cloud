@@ -28,8 +28,9 @@ kubectl get nodes
 
 ## 2. Build & Push Image Locally
 
-Example uses **GitHub Container Registry (GHCR)**. Replace with Docker Hub if preferred.
+You can push the image to different registries.  
 
+### A. GitHub Container Registry (GHCR)
 ```bash
 # Login to GHCR (use a GitHub Personal Access Token with "write:packages")
 echo "$GITHUB_TOKEN" | docker login ghcr.io -u <your_github_username> --password-stdin
@@ -42,6 +43,33 @@ docker push $IMAGE
 ```
 
 > If using Docker Hub: `docker login`, set `IMAGE=<dockerhub_user>/<repo>:dev`.
+
+---
+
+### B. Google Artifact Registry (GCR / AR)
+
+First, authenticate Docker with Artifact Registry:
+
+```bash
+gcloud auth configure-docker asia-southeast1-docker.pkg.dev
+```
+
+Then build and push:
+
+```bash
+cd app
+IMAGE=asia-southeast1-docker.pkg.dev/<PROJECT_ID>/<REPO_NAME>/backend:dev
+docker build -t $IMAGE .
+docker push $IMAGE
+```
+
+- `<PROJECT_ID>` = your GCP project ID (e.g. `optimexdev`)
+- `<REPO_NAME>` = Artifact Registry repo created by Terraform (e.g. `backend-images`)
+- `backend` = image name (matches your Helm chart values)
+
+---
+
+> In this demo we use **Google Artifact Registry** (`asia-southeast1-docker.pkg.dev/PROJECT/backend-images/backend:<tag>`) as the container registry.
 
 ---
 
@@ -101,15 +129,20 @@ curl -sS http://127.0.0.1:8080/healthz
 - **Triggers:**
   - `push` to `main` affecting `app/**`, `charts/**`, or the workflow file
   - Manual `workflow_dispatch` in the Actions tab
-- **Required repo secrets:**
-  - `GCP_SA_KEY` — Service Account JSON with GKE deploy permissions
-  - `GKE_CLUSTER` — e.g. `demo-ravid-cloud`
-  - `GKE_ZONE` — e.g. `asia-southeast1-a`
-  - `GCP_PROJECT_ID` — your GCP project id
+
+- **Required GitHub Secrets:**
+  - `GCP_PROJECT_ID` — GCP project id
+  - `GCP_WIF_PROVIDER` — Workload Identity Provider resource name (Terraform output `workload_identity_provider`)
+  - `GKE_CLUSTER` — GKE cluster name (e.g. `demo-ravid-cloud`)
+  - `GKE_ZONE` — cluster zone (e.g. `asia-southeast1-a`)
+  - `AR_REGION` — Artifact Registry region (e.g. `asia-southeast1`)
+  - `AR_REPO` — Artifact Registry repo name (e.g. `backend-images`)
+
 - **What it does:**
-  1. Build Docker image tagged `sha-<commitSHA>` and push to GHCR
-  2. Authenticate to GKE
-  3. `helm upgrade --install` with that image (immutable tag)
+  1. Builds Docker image tagged `sha-<commitSHA>` and pushes to **Artifact Registry** (`<region>-docker.pkg.dev/<project>/<repo>/<image>`).
+  2. Authenticates to GCP using **Workload Identity Federation** (no JSON key needed).
+  3. Gets cluster credentials for GKE.
+  4. Runs `helm upgrade --install` to deploy the new image (immutable tag).
 
 ---
 

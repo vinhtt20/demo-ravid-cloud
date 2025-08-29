@@ -1,5 +1,5 @@
 image:
-  repository: ghcr.io/OWNER/REPO
+  repository: asia-southeast1-docker.pkg.dev/optimexdev/backend-images/backend
   tag: "dev"
   pullPolicy: IfNotPresent
 
